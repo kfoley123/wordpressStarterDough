@@ -1,27 +1,40 @@
+# version number of this container, change this when main file is updated 
 version: '1.0'
+# services is where you define your containers, mine are db (back end) and wordpress (front end)
 services:
   db:
+  # name that shows up in docker desktop app for this particular container
     container_name: 'local-wordpress-db'
+    # base image - this one is mySQL version 8.0
     image: 'mysql:8.0'
+    # volumes is where the data is stored
     volumes:
       - './data/mysql:/var/lib/mysql'
+    # variables that this particular container requires
     environment:
+    
       MYSQL_ROOT_PASSWORD: somewordpress
       MYSQL_DATABASE: wordpress_db
       MYSQL_USER: wordpress_user
       MYSQL_PASSWORD: wordpress_password
+  # name that shows up in docker desktop app for this particular container
   wordpress:
     container_name: 'local-wordpress'
+    # this container needs db (the wordpress backend) to be running in order to build 
     depends_on:
       - db
+    # base image for this container, but this one will pull up the latest version of wordpress  
     image: 'wordpress:latest'
+    # port for front end to run on
     ports:
       - 666:80
+    # variables that this particular container requires
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: wordpress_user
       WORDPRESS_DB_PASSWORD: wordpress_password
       WORDPRESS_DB_NAME: wordpress_db
+    # pulled out themes and plugins and gave them their own folders so that it will be easier to use git to track them
     volumes:
       - "./wordpress:/var/www/html"
       - "./themes:/var/www/html/wp-content/themes"
