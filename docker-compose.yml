@@ -1,41 +1,40 @@
-# version number of this container, change this when main file is updated 
-version: '1.0'
-# services is where you define your containers, mine are db (back end) and wordpress (front end)
 services:
   db:
-  # name that shows up in docker desktop app for this particular container
     container_name: 'local-wordpress-db'
-    # base image - this one is mySQL version 8.0
     image: 'mysql:8.0'
-    # volumes is where the data is stored
+    restart: always
     volumes:
-      - './data/mysql:/var/lib/mysql'
-    # variables that this particular container requires
+      - db_data:/var/lib/mysql
     environment:
-    
-      MYSQL_ROOT_PASSWORD: somewordpress
-      MYSQL_DATABASE: wordpress_db
-      MYSQL_USER: wordpress_user
-      MYSQL_PASSWORD: wordpress_password
-  # name that shows up in docker desktop app for this particular container
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 3
+    ports:
+      - "3306:3306"
+
   wordpress:
     container_name: 'local-wordpress'
-    # this container needs db (the wordpress backend) to be running in order to build 
     depends_on:
-      - db
-    # base image for this container, but this one will pull up the latest version of wordpress  
-    image: 'wordpress:latest'
-    # port for front end to run on
+      db:
+        condition: service_healthy
+    image: 'wordpress:6.4' # Use a stable version instead of latest
+    restart: always
     ports:
-      - 666:80
-    # variables that this particular container requires
+      - "666:80"
     environment:
       WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: wordpress_user
-      WORDPRESS_DB_PASSWORD: wordpress_password
-      WORDPRESS_DB_NAME: wordpress_db
-    # pulled out themes and plugins and gave them their own folders so that it will be easier to use git to track them
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
     volumes:
       - "./wordpress:/var/www/html"
       - "./themes:/var/www/html/wp-content/themes"
       - "./plugins:/var/www/html/wp-content/plugins"
+
+volumes:
+  db_data:
